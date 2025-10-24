@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Atjeh Warfare!</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: url('perang.png') no-repeat center center/cover;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      background-color: rgba(0, 0, 0, 0.3);
+    }
+    #menu {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: white;
+      font-family: sans-serif;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background: #ff4747;
+      color: white;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #ff2222;
+    }
+  </style>
+</head>
+<body>
+  <div id="menu">
+    <h1>🎖️ Atjeh Warfare 🎖️</h1>
+    <button id="playBtn">Play</button>
+  </div>
+
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+  <audio id="bgMusic" src="war-battle-military-drums-318680.mp3" loop></audio>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const menu = document.getElementById('menu');
+    const playBtn = document.getElementById('playBtn');
+    const bgMusic = document.getElementById('bgMusic');
+
+    let player = { x: 380, y: 530, w: 40, h: 40, speed: 6 };
+    let bullets = [];
+    let enemies = [];
+    let score = 0;
+    let gameRunning = false;
+
+    function drawPlayer() {
+      ctx.fillStyle = 'cyan';
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+    }
+
+    function drawBullets() {
+      ctx.fillStyle = 'yellow';
+      bullets.forEach(b => ctx.fillRect(b.x, b.y, 5, 15));
+    }
+
+    function drawEnemies() {
+      ctx.fillStyle = 'red';
+      enemies.forEach(e => ctx.fillRect(e.x, e.y, e.w, e.h));
+    }
+
+    function updateBullets() {
+      bullets.forEach(b => b.y -= 8);
+      bullets = bullets.filter(b => b.y > 0);
+    }
+
+    function updateEnemies() {
+      enemies.forEach(e => e.y += 3);
+      enemies = enemies.filter(e => e.y < canvas.height);
+    }
+
+    function spawnEnemy() {
+      if (!gameRunning) return;
+      const x = Math.random() * (canvas.width - 40);
+      enemies.push({ x: x, y: 0, w: 40, h: 40 });
+      setTimeout(spawnEnemy, 1000);
+    }
+
+    function checkCollisions() {
+      enemies.forEach((e, ei) => {
+        bullets.forEach((b, bi) => {
+          if (b.x < e.x + e.w && b.x + 5 > e.x && b.y < e.y + e.h && b.y + 15 > e.y) {
+            enemies.splice(ei, 1);
+            bullets.splice(bi, 1);
+            score += 10;
+          }
+        });
+        if (e.x < player.x + player.w && e.x + e.w > player.x && e.y < player.y + player.h && e.y + e.h > player.y) {
+          gameOver();
+        }
+      });
+    }
+
+    function gameOver() {
+      gameRunning = false;
+      bgMusic.pause();
+      alert('💥 Game Over! Skor kamu: ' + score);
+      location.reload();
+    }
+
+    function gameLoop() {
+      if (!gameRunning) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawPlayer();
+      drawBullets();
+      drawEnemies();
+      updateBullets();
+      updateEnemies();
+      checkCollisions();
+
+      ctx.fillStyle = 'white';
+      ctx.font = '20px Arial';
+      ctx.fillText('Score: ' + score, 10, 25);
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (!gameRunning) return;
+      if (e.key === 'ArrowLeft' && player.x > 0) player.x -= player.speed;
+      if (e.key === 'ArrowRight' && player.x + player.w < canvas.width) player.x += player.speed;
+      if (e.key === ' ') bullets.push({ x: player.x + player.w / 2 - 2, y: player.y });
+    });
+
+    playBtn.addEventListener('click', () => {
+      menu.style.display = 'none';
+      gameRunning = true;
+      bgMusic.play();
+      spawnEnemy();
+      gameLoop();
+    });
+  </script>
+</body>
+</html>
